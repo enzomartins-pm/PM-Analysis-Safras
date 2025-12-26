@@ -3,7 +3,6 @@ import sys
 import json
 import re
 from pathlib import Path
-from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Tuple
 
 import numpy as np
@@ -31,9 +30,33 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
-MASTER_PROPOSALS_PATH = DATA_PROCESSED / "master_proposals.parquet"
-MASTER_INSTALLMENTS_PATH = DATA_PROCESSED / "master_installments.parquet"
+# -----------------------------
+# Data paths (local vs cloud runtime)
+# -----------------------------
+DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+RUNTIME_DATA_DIR = Path(os.getenv("PM_RUNTIME_DATA_DIR", "/tmp/pm_analytics_data"))
+RUNTIME_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def resolve_master_paths() -> tuple[Path, Path, str]:
+    """
+    - Local dev: usa data/processed/ se existir
+    - Streamlit Cloud: usa /tmp/pm_analytics_data/
+    """
+    p1_local = DEFAULT_PROCESSED_DIR / "master_proposals.parquet"
+    p2_local = DEFAULT_PROCESSED_DIR / "master_installments.parquet"
+
+    if p1_local.exists() and p2_local.exists():
+        return p1_local, p2_local, "local"
+
+    return (
+        RUNTIME_DATA_DIR / "master_proposals.parquet",
+        RUNTIME_DATA_DIR / "master_installments.parquet",
+        "runtime",
+    )
+
+
+MASTER_PROPOSALS_PATH, MASTER_INSTALLMENTS_PATH, DATA_MODE = resolve_master_paths()
 
 
 # -----------------------------
@@ -193,15 +216,70 @@ def money_br(x: float) -> str:
     return f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def ensure_data_files():
+    """
+    Se os parquets não existirem (ex.: Streamlit Cloud),
+    pede upload via sidebar e salva em /tmp (runtime).
+    """
+    global MASTER_PROPOSALS_PATH, MASTER_INSTALLMENTS_PATH, DATA_MODE
+
+    with st.sidebar:
+        st.markdown("### 📦 Dados (privado)")
+
+        # Mostra modo atual
+        st.caption(f"Fonte detectada: **{DATA_MODE}**")
+
+        # Botão de reset (apaga /tmp e limpa cache)
+        if st.button("🔄 Resetar dados (apagar e reenviar)"):
+            for p in [MASTER_PROPOSALS_PATH, MASTER_INSTALLMENTS_PATH]:
+                try:
+                    if p.exists():
+                        p.unlink()
+                except Exception:
+                    pass
+            st.cache_data.clear()
+            st.rerun()
+
+    # Se já existem, segue
+    if MASTER_PROPOSALS_PATH.exists() and MASTER_INSTALLMENTS_PATH.exists():
+        return
+
+    st.warning(
+        "📦 **Dados não encontrados no ambiente do deploy.**\n\n"
+        "Envie os 2 arquivos na barra lateral:\n"
+        "- `master_proposals.parquet`\n"
+        "- `master_installments.parquet`\n\n"
+        "Eles serão salvos temporariamente em **/tmp** (não vão para o Git)."
+    )
+
+    with st.sidebar:
+        up1 = st.file_uploader("Upload: master_proposals.parquet", type=["parquet"])
+        up2 = st.file_uploader("Upload: master_installments.parquet", type=["parquet"])
+
+        if up1 is not None and up2 is not None:
+            # força runtime paths
+            MASTER_PROPOSALS_PATH = RUNTIME_DATA_DIR / "master_proposals.parquet"
+            MASTER_INSTALLMENTS_PATH = RUNTIME_DATA_DIR / "master_installments.parquet"
+            DATA_MODE = "runtime"
+
+            MASTER_PROPOSALS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            MASTER_PROPOSALS_PATH.write_bytes(up1.getbuffer())
+            MASTER_INSTALLMENTS_PATH.write_bytes(up2.getbuffer())
+
+            st.success("✅ Arquivos recebidos. Recarregando…")
+            st.cache_data.clear()
+            st.rerun()
+
+    st.stop()
+
+
 # -----------------------------
 # Loaders (cached)
 # -----------------------------
 @st.cache_data(show_spinner=True)
 def load_master() -> Tuple[pd.DataFrame, pd.DataFrame]:
-    if not MASTER_PROPOSALS_PATH.exists():
-        raise FileNotFoundError(f"Não achei {MASTER_PROPOSALS_PATH}")
-    if not MASTER_INSTALLMENTS_PATH.exists():
-        raise FileNotFoundError(f"Não achei {MASTER_INSTALLMENTS_PATH}")
+    if not MASTER_PROPOSALS_PATH.exists() or not MASTER_INSTALLMENTS_PATH.exists():
+        raise FileNotFoundError("Arquivos master_*.parquet não encontrados. Use o upload na sidebar.")
 
     mp = pd.read_parquet(MASTER_PROPOSALS_PATH)
     mi = pd.read_parquet(MASTER_INSTALLMENTS_PATH)
@@ -561,6 +639,9 @@ def offline_answer(
 # -----------------------------
 st.title("PM Analytics — Análise por Período (base_month)")
 st.caption("Base temporal: base_month derivado de [PAGO] Data do Pagamento (Tabela 1). Filtros afetam todas as abas.")
+
+# >>> garante dados no Cloud antes de carregar
+ensure_data_files()
 
 mp, mi = load_master()
 
