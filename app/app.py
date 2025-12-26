@@ -1228,11 +1228,3 @@ with tabs[8]:
                 st.caption("Sem volume suficiente para quebrar rebate por score_bucket no recorte atual.")
     else:
         st.info("Coluna `has_rebate` não disponível.")
-
-    st.markdown("### ✅ Checklist de ações sugeridas")
-    st.markdown(
-        "- **Top 3 clínicas no Pareto**: abrir investigação (mix de políticas, horários, cobrança, perfil).\n"
-        "- **Top 5 políticas por trade_score**: promover (mais share) se não aumentar incidentes.\n"
-        "- **Bottom 5 políticas**: revisar regras (taxa, rebate, validações, triggers).\n"
-        "- **Heatmap com mudança de padrão**: ver o que mudou no mês (processo, política, canal, cobrança)."
-    )
