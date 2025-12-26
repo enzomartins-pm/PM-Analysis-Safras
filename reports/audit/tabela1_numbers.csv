@@ -1,0 +1,5 @@
+num_col,non_null,failed_numeric_parse,min,max
+[PAGO] Valor Emprestado,4960,0,450.0,18000.0
+Taxa de Juros,0,0,,
+Taxa de Juros Rebate,0,0,,
+Score Serasa,4943,0,391.0,1000.0

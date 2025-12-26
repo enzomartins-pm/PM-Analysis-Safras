@@ -1,0 +1,142 @@
+column,null_rate_pct
+Slug,100.0
+Mesa de Crédito,100.0
+Taxa de Juros Rebate,100.0
+Taxa de Juros,100.0
+Serasa - Valor Restrições,100.0
+Política Rebate,100.0
+Política,100.0
+PH3A S.M - Perfil Entusiasta de Tecnologia,100.0
+SCR - Modalidades,100.0
+PH3A - Lista de LawProcesses,99.56
+Filme SCR - % Dividas Prime 31 a 90,97.18
+Lista de triggers,96.11
+SCR - % Dividas Prime 31 a 90,96.03
+PH3A S.M - Perfil de Pós-Graduação,87.38
+PH3A S.M - Perfil de Seguro ,87.38
+PH3A S.M - Perfil de Aposta Online,87.38
+PH3A S.M - Perfil de Pontos e Milhas,87.38
+CALC - Valor em Assistances Subprime,87.26
+Risco Cadastral,86.82
+PH3A S.M - Perfil Posse de Moto,83.93
+Filme SCR - % Dividas Subprime 31 a 90,83.65
+Lista de defaults,83.47
+Realizar Ligação WC?,83.33
+PH3A S.M - Perfil de Conta Bancária Digital,83.07
+PH3A S.M - Perfil de Consorcio,82.66
+PH3A S.M - Perfil de Conta Bancária Premium,82.46
+PH3A S.M - Perfil de Conta Bancária de Investimento,82.26
+PH3A S.M - Perfil de Consumo de Luxo ,81.7
+PH3A S.M - Perfil de Veículo Zero KM ,81.58
+PH3A - Tempo Ocupação Atual,80.75
+PH3A S.M - Perfil de Posse de Automóvel,79.02
+SCR - % Dividas Subprime 31 a 90,78.79
+PH3A S.M - Perfil de Comportamento Digital,78.37
+PH3A S.M - Perfil de Tomador de Empréstimos,77.85
+PH3A S.M - Perfil de Posse de Imóvel,76.92
+[OTIMA] is_subscriber?,74.82
+Versão da Análise,73.11
+Classe de Risco b2e,72.04
+CALC - % Assistances Subprime,68.47
+CALC - Valor em Assistances Ativas,68.41
+[PH3A] Lista de telefones HOT,65.69
+CALC - Carteira Vencida SCR / Renda Anual,60.83
+SCR - Valor Médio Desembolso (31-90),60.59
+Idade Cliente,59.16
+Data Analise/Proposta,56.5
+PH3A - Lista de Professions,49.77
+PH3A - Tempo em Ocupações,49.77
+Serasa - Ações Judiciais,47.09
+Consulta scr erro?,46.62
+CALC - Endividamento Filme SCR / Endividamento SCR,40.33
+Filme SCR - % Dividas Subprime Total,39.69
+Filme SCR - % Dividas Prime Total,39.69
+Serasa - Valor Refins,37.05
+Serasa - Valor Protestos,35.54
+PH3A - Lista de Assistances,35.13
+Serasa - Valor Pefins,34.17
+SCR - Fornecedor,32.84
+Serasa - # Protestos,32.43
+PH3A - Lista de StatisticalModels,30.5
+DT|Payment 6,30.34
+Parcela 6,30.34
+Parcela 5,25.36
+DT|Payment 5,25.36
+Filme SCR - Carteira de Crédito,23.42
+Filme SCR - Qtd Insituições,23.24
+SCR - % Dividas Prime Total,19.92
+SCR - % Dividas Subprime Total,19.92
+Parcela 4,19.75
+DT|Payment 4,19.75
+Filme SCR - Creditos a Liberar,19.65
+Filme SCR - Total Vencido,19.65
+Filme SCR - Total Prejuízo,19.65
+Filme SCR - Qtd. Operações,19.65
+Filme SCR - A Vencer Ate 61d-90d,19.65
+Filme SCR - A Vencer Ate 31d-60d,19.65
+Filme SCR - A Vencer Ate 30d,19.65
+consulta srm filme erro?,19.63
+Filme SCR - Valor Médio Desembolso (31-90),19.49
+Filme - Consulta,19.49
+PH3A - Renda Familiar,17.76
+Estado Empregatício Informado,17.64
+PH3A - Pre Screening D30,17.38
+PH3A - Pre Screening D60,17.36
+PH3A - Pre Screening D90,17.36
+PH3A - Pre Screening D00,17.09
+PH3A - Credit Score D90,17.09
+PH3A - Credit Score D60,17.09
+PH3A - Credit Score D30,17.09
+PH3A - Credit Score D00,17.05
+PH3A - Renda Presumida,16.97
+PH3A - Consulta,16.87
+DT|Payment 3,13.47
+Parcela 3,13.47
+Serasa - # Pefins,12.72
+Serasa - # Refins,12.72
+Parcela 2,8.65
+DT|Payment 2,8.65
+CALC - Créditos a Liberar / VTM,6.43
+[SRM] VTM,6.35
+Parcela 1,5.38
+DT|Payment 1,5.36
+SCR - Carteira de Crédito,4.76
+SCR - Limite de Credito Ate360,3.18
+SCR - Qtd Insituições,3.18
+SCR - Limite de Credito Acima360,3.18
+SCR - Creditos a Liberar,3.18
+SCR - Qtd. Operações,3.16
+SCR - Total Prejuízo,3.16
+SCR - Total Vencido,3.16
+SCR - A Vencer Ate 30d,3.16
+SCR - A Vencer Ate 61d-90d,3.16
+SCR - A Vencer Ate 31d-60d,3.16
+Análise de Crédito Backtest,3.0
+Análise de Crédito Original,2.92
+SCR - Consulta,0.48
+Serasa - Consulta,0.38
+Score Serasa,0.36
+Risco Clinica - Number,0.26
+[PAGO] Data do Pagamento,0.12
+[SRM] Codigo OP,0.02
+[PAGO] Valor Emprestado,0.02
+[PH3A] Telefone HOT é o da Proposta?,0.0
+[PH3A] Tem telefone HOT?,0.0
+Creation Date,0.0
+Modified Date,0.0
+Creator,0.0
+Backtest ID,0.0
+Telefone da Proposta,0.0
+PH3A - Tempo Médio Ocupações,0.0
+CALC - # Assistances Subprime,0.0
+Serasa - # Restrições,0.0
+CALC - Assistances Ativas,0.0
+SCR - Tempo de Relacionamento (anos),0.0
+Clinica,0.0
+CPF Proposta,0.0
+dataVencimento 1a Parcela,0.0
+Filme SCR - Tempo de Relacionamento (anos),0.0
+proposal,0.0
+PH3A - # de Ocupações,0.0
+PH3A - Empregado?,0.0
+unique id,0.0

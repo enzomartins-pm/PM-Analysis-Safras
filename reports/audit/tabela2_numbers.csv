@@ -1,0 +1,4 @@
+num_col,non_null,failed_numeric_parse,min,max
+[PAGO] Valor Pago,34553,0,0.0,6529.94
+Valor Parcela,73191,0,0.1210166667,6529.93
+Valor total,0,0,,

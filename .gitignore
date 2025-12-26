@@ -1,0 +1,25 @@
+# Dados sensíveis
+data/raw/
+data/processed/
+reports/tables/
+reports/figures/
+reports/*.pdf
+
+# Secrets
+.env
+*.env
+.streamlit/secrets.toml
+app/.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

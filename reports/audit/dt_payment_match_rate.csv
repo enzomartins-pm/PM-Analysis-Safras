@@ -1,0 +1,7 @@
+dt_col,n_ids,n_matched,match_rate_pct
+DT|Payment 1,4695,4691,99.91
+DT|Payment 2,4532,4532,100.0
+DT|Payment 3,4293,4292,99.98
+DT|Payment 4,3981,3981,100.0
+DT|Payment 5,3703,3703,100.0
+DT|Payment 6,3456,3455,99.97
