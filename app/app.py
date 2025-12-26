@@ -738,7 +738,7 @@ tabs = st.tabs([
     "🧠 Clusters",
     "💸 Rebate",
     "🧾 Parcelas",
-    "🤖 Chat Offline",
+    "🚦 Diagnóstico & Ações",
 ])
 
 # -----------------------------
@@ -1013,67 +1013,226 @@ with tabs[7]:
         st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
-# Tab: Chat Offline
+# Tab: Diagnostico & Ações
 # -----------------------------
 with tabs[8]:
-    st.subheader("Chat Offline (sem OpenAI) — insights a partir dos seus dados")
-    st.caption("Esse chat responde usando apenas o recorte atual (filtros + meses selecionados). Você também pode anexar uma tabela para interpretação.")
+    st.subheader("🚦 Diagnóstico & Ações (priorização)")
+    st.caption("Objetivo: apontar onde agir primeiro (políticas/clínicas) e como o comportamento muda por mês.")
 
-    if "chat" not in st.session_state:
-        st.session_state.chat = []
-    if "last_table" not in st.session_state:
-        st.session_state.last_table = None
-    if "last_table_meta" not in st.session_state:
-        st.session_state.last_table_meta = None
-
-    st.markdown("### 1) Gerar uma tabela (opcional) e anexar ao contexto")
-    c1, c2, c3 = st.columns([2, 2, 1])
+    # -----------------------------
+    # Controles da aba
+    # -----------------------------
+    c1, c2, c3 = st.columns([1, 1, 2])
     with c1:
-        chat_metric = st.selectbox(
-            "Métrica (para a tabela)",
-            list(ALLOWED_METRICS.keys()),
-            index=list(ALLOWED_METRICS.keys()).index("paid_p1_rate"),
-        )
+        min_n = st.number_input("Volume mínimo (N propostas) para ranking", min_value=10, max_value=500, value=30, step=10)
     with c2:
-        chat_dim = st.selectbox(
-            "Dimensão (group by)",
-            [d for d in ALLOWED_DIMS if d in df_f.columns],
-            index=0,
-        )
+        metric_heat = st.selectbox("Métrica do heatmap", ["Paid P1 (%)", "Incidentes (%)", "Rebate share (%)"], index=0)
     with c3:
-        chat_topn = st.number_input("Top N", min_value=5, max_value=50, value=15, step=1)
+        st.markdown("**Como ler:** trade-off = (PaidP1% − Inc%) × log(1+N). Quanto maior, melhor (com volume).")
 
-    if st.button("📌 Calcular tabela e anexar"):
-        try:
-            generated_table = compute_table(df_f, metric=chat_metric, groupby=[chat_dim], top_n=int(chat_topn))
-            st.success("Tabela calculada e anexada ao chat.")
-            st.dataframe(generated_table, use_container_width=True)
-            st.session_state.last_table = generated_table
-            st.session_state.last_table_meta = {"metric": chat_metric, "dim": chat_dim, "topn": int(chat_topn)}
-        except Exception as e:
-            st.error(f"Erro ao calcular tabela: {e}")
+    # -----------------------------
+    # 1) Ranking de políticas (trade-off)
+    # -----------------------------
+    st.markdown("### 1) Políticas — ranking de trade-off (Paid P1 ↑ vs Incidentes ↓)")
 
-    st.markdown("### 2) Resumo automático (offline)")
-    if st.button("🧾 Gerar resumo do recorte"):
-        st.markdown(offline_insights(df_f))
-
-    st.markdown("### 3) Conversa")
-    for m in st.session_state.chat:
-        with st.chat_message(m["role"]):
-            st.markdown(m["content"])
-
-    user_q = st.chat_input("Pergunte algo tipo: 'Top políticas por trade-off' ou 'Incidentes por mês' (dica: 2024-05)")
-    if user_q:
-        st.session_state.chat.append({"role": "user", "content": user_q})
-
-        answer = offline_answer(
-            user_q=user_q,
-            df_all=df_f,
-            last_table=st.session_state.last_table,
-            last_table_meta=st.session_state.last_table_meta,
+    if "Política" in df_f.columns and df_f["Política"].notna().any():
+        pol = (
+            df_f.groupby("Política", dropna=False)
+            .agg(
+                N=("proposal_id", "nunique"),
+                paid=("paid_p1", "mean"),
+                inc=("is_incident", "mean"),
+                taxa=("Taxa de Juros", lambda s: safe_num(s).mean()),
+                valor_total=("[PAGO] Valor Emprestado", lambda s: safe_num(s).sum()),
+            )
+            .reset_index()
         )
 
-        with st.chat_message("assistant"):
-            st.markdown(answer)
+        pol = pol[pol["N"] >= int(min_n)].copy()
+        if pol.empty:
+            st.info("Sem volume suficiente por política com o filtro atual. Reduza o 'Volume mínimo' ou remova filtros.")
+        else:
+            pol["PaidP1%"] = (pol["paid"] * 100).round(2)
+            pol["Inc%"] = (pol["inc"] * 100).round(2)
+            pol["trade_score"] = (pol["PaidP1%"] - pol["Inc%"]) * np.log1p(pol["N"])
+            pol = pol.sort_values("trade_score", ascending=False)
 
-        st.session_state.chat.append({"role": "assistant", "content": answer})
+            st.dataframe(
+                pol[["Política", "N", "PaidP1%", "Inc%", "taxa", "valor_total", "trade_score"]],
+                use_container_width=True
+            )
+
+            fig = px.bar(
+                pol.head(20),
+                x="Política",
+                y="trade_score",
+                color="PaidP1%",
+                hover_data=["N", "Inc%", "taxa", "valor_total"],
+                title="Top 20 políticas por trade_score (cor = Paid P1 %)",
+            )
+            fig.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Coluna **Política** não disponível no recorte atual.")
+
+    # -----------------------------
+    # 2) Clínicas — Pareto de incidentes
+    # -----------------------------
+    st.markdown("### 2) Clínicas — Pareto de incidentes (onde está o problema)")
+
+    if "Clinica" in df_f.columns and df_f["Clinica"].notna().any():
+        cli = (
+            df_f.groupby("Clinica", dropna=False)
+            .agg(
+                N=("proposal_id", "nunique"),
+                inc_rate=("is_incident", "mean"),
+                inc_count=("is_incident", "sum"),
+                paid=("paid_p1", "mean"),
+                valor_total=("[PAGO] Valor Emprestado", lambda s: safe_num(s).sum()),
+            )
+            .reset_index()
+        )
+
+        cli = cli[cli["N"] >= int(min_n)].copy()
+        if cli.empty:
+            st.info("Sem volume suficiente por clínica com o filtro atual. Reduza o 'Volume mínimo' ou remova filtros.")
+        else:
+            cli["Inc%"] = (cli["inc_rate"] * 100).round(2)
+            cli["PaidP1%"] = (cli["paid"] * 100).round(2)
+
+            # prioridade simples: volume × taxa de incidentes
+            cli["priority_score"] = cli["N"] * cli["inc_rate"]
+
+            # Pareto
+            cli = cli.sort_values("inc_count", ascending=False)
+            total_inc = float(cli["inc_count"].sum()) if cli["inc_count"].sum() else 1.0
+            cli["inc_share"] = cli["inc_count"] / total_inc
+            cli["inc_share_cum"] = cli["inc_share"].cumsum()
+
+            st.dataframe(
+                cli[["Clinica", "N", "Inc%", "PaidP1%", "inc_count", "inc_share", "inc_share_cum", "priority_score", "valor_total"]].head(40),
+                use_container_width=True
+            )
+
+            pareto = cli.head(30).copy()
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=pareto["Clinica"],
+                y=pareto["inc_count"],
+                name="Incidentes (count)"
+            ))
+            fig.add_trace(go.Scatter(
+                x=pareto["Clinica"],
+                y=(pareto["inc_share_cum"] * 100),
+                name="Acumulado (%)",
+                mode="lines+markers",
+                yaxis="y2"
+            ))
+            fig.update_layout(
+                title="Pareto de incidentes por clínica (Top 30)",
+                xaxis_tickangle=-45,
+                yaxis_title="Incidentes (count)",
+                yaxis2=dict(title="Acumulado (%)", overlaying="y", side="right", range=[0, 100]),
+                legend=dict(orientation="h")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Coluna **Clinica** não disponível no recorte atual.")
+
+    # -----------------------------
+    # 3) Heatmap por mês — política x mês
+    # -----------------------------
+    st.markdown("### 3) Heatmap — Política × Mês (mudança de padrão)")
+
+    if "Política" in df_f.columns and df_f["Política"].notna().any():
+        metric_map = {
+            "Paid P1 (%)": ("paid_p1", "mean"),
+            "Incidentes (%)": ("is_incident", "mean"),
+            "Rebate share (%)": ("has_rebate", "mean"),
+        }
+        col, agg = metric_map[metric_heat]
+
+        piv = (
+            df_f.groupby(["Política", "base_month"], dropna=False)
+            .agg(
+                val=(col, "mean"),
+                N=("proposal_id", "nunique"),
+            )
+            .reset_index()
+        )
+
+        # opcional: filtra só onde tem volume
+        piv = piv[piv["N"] >= int(min_n)].copy()
+        if piv.empty:
+            st.info("Sem volume suficiente para montar heatmap. Reduza o 'Volume mínimo'.")
+        else:
+            piv["val_pct"] = (piv["val"] * 100).round(2)
+            heat = piv.pivot(index="Política", columns="base_month", values="val_pct").fillna(np.nan)
+
+            fig = px.imshow(
+                heat,
+                aspect="auto",
+                title=f"{metric_heat} por Política e Mês (apenas células com N ≥ {int(min_n)})",
+                color_continuous_scale="RdYlGn" if metric_heat == "Paid P1 (%)" else "RdYlGn_r",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Sem coluna **Política** para heatmap.")
+
+    # -----------------------------
+    # 4) Rebate — efeito rápido (com vs sem) e por score_bucket
+    # -----------------------------
+    st.markdown("### 4) Rebate — efeito rápido")
+
+    if "has_rebate" in df_f.columns:
+        rb = (
+            df_f.groupby("has_rebate", dropna=False)
+            .agg(
+                N=("proposal_id", "nunique"),
+                PaidP1=("paid_p1", "mean"),
+                Inc=("is_incident", "mean"),
+                Spread=("rebate_spread", lambda s: safe_num(s).mean()),
+            )
+            .reset_index()
+        )
+        rb["PaidP1%"] = (rb["PaidP1"] * 100).round(2)
+        rb["Inc%"] = (rb["Inc"] * 100).round(2)
+        rb["Spread"] = rb["Spread"].round(4)
+        rb["Grupo"] = rb["has_rebate"].map(lambda x: "Com rebate" if bool(x) else "Sem rebate")
+
+        st.dataframe(rb[["Grupo", "N", "PaidP1%", "Inc%", "Spread"]], use_container_width=True)
+
+        if "score_bucket" in df_f.columns and df_f["score_bucket"].notna().any():
+            rb2 = (
+                df_f.groupby(["score_bucket", "has_rebate"], dropna=False)
+                .agg(N=("proposal_id", "nunique"), PaidP1=("paid_p1", "mean"), Inc=("is_incident", "mean"))
+                .reset_index()
+            )
+            rb2 = rb2[rb2["N"] >= int(min_n)].copy()
+            if not rb2.empty:
+                rb2["PaidP1%"] = (rb2["PaidP1"] * 100).round(2)
+                rb2["Inc%"] = (rb2["Inc"] * 100).round(2)
+                rb2["Grupo"] = rb2["has_rebate"].map(lambda x: "Com rebate" if bool(x) else "Sem rebate")
+
+                fig = px.bar(
+                    rb2,
+                    x="score_bucket",
+                    y="PaidP1%",
+                    color="Grupo",
+                    barmode="group",
+                    hover_data=["N", "Inc%"],
+                    title="Paid P1 (%) por score_bucket — Com vs Sem rebate (células com N ≥ mínimo)",
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.caption("Sem volume suficiente para quebrar rebate por score_bucket no recorte atual.")
+    else:
+        st.info("Coluna `has_rebate` não disponível.")
+
+    st.markdown("### ✅ Checklist de ações sugeridas")
+    st.markdown(
+        "- **Top 3 clínicas no Pareto**: abrir investigação (mix de políticas, horários, cobrança, perfil).\n"
+        "- **Top 5 políticas por trade_score**: promover (mais share) se não aumentar incidentes.\n"
+        "- **Bottom 5 políticas**: revisar regras (taxa, rebate, validações, triggers).\n"
+        "- **Heatmap com mudança de padrão**: ver o que mudou no mês (processo, política, canal, cobrança)."
+    )
