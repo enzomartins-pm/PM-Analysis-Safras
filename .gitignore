@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Streamlit secrets
+.streamlit/secrets.toml
+app/.streamlit/secrets.toml
+
+# Dados sensíveis/grandes
+*.parquet
+data/processed/
+tmp/
+
+# Dados sensíveis
+data/raw/
+data/raw/**
+
+# (opcional) outros formatos comuns de dados
+*.parquet
+*.csv
+*.xlsx
+*.xls
+*.json
+*.zip
