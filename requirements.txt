@@ -1,5 +1,5 @@
-streamlit==1.40.1
-pandas==2.2.3
-numpy==1.26.4
+streamlit==1.36.0
+pandas==2.2.2
+numpy==2.0.1
+plotly==5.23.0
 pyarrow==16.1.0
-plotly==5.22.0
